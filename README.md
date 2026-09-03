@@ -469,3 +469,6 @@ If YouTube changes its player and something stops working, feel free to open an 
 **Rotate sideways YouTube videos. Keep them rotated in fullscreen. See the whole picture.**
 
 **旋转侧着的 YouTube 视频，全屏保持方向，完整显示不裁切。**
+
+**本项目完全由AI制作，本人完全不懂代码，只是因为看视频的时候发现油管无法旋转，所以问了GPT该怎么办，于是有了此项目**
+**This project was made entirely with AI. I don't know how to code at all. It started because I was watching a video and realized that YouTube has no built-in way to rotate it, so I asked GPT what I could do. And that is how this project came to exist.**
