@@ -2,7 +2,7 @@
 @name YouTube 旋转与调整
 @name：zh-CN YouTube 视频旋转与全屏适配
 @namespace YouTube-rotate-fit
-@version 1.0.0
+// @version      1.0.1
 @description 横向旋转YouTube视频，自动将整个视频全屏显示，无需裁剪。
 @description：zh-CN 将侧着的 YouTube 视频旋转 90°，并在普通模式和全屏模式下自动完整缩放，不裁切画面。
 @author YouTube Rotate & Fit 贡献者
@@ -10,9 +10,9 @@
 @grant 没有
 @run-at document-idle
 @license麻省理工学院
-@homepageURL https://gist.github.com/anamelessdude/fa626081b6fd183fae5c45ddf05aa06a
-@updateURL https://gist.githubusercontent.com/anamelessdude/fa626081b6fd183fae5c45ddf05aa06a/raw/youtube-rotate-fit.user.js
-@downloadURL https://gist.githubusercontent.com/anamelessdude/fa626081b6fd183fae5c45ddf05aa06a/raw/youtube-rotate-fit.user.js
+// @homepageURL  https://github.com/anamelessdude/YouTube-Video-Rotator
+// @updateURL    https://raw.githubusercontent.com/anamelessdude/YouTube-Video-Rotator/main/youtube-rotate-fit.user.js
+// @downloadURL  https://raw.githubusercontent.com/anamelessdude/YouTube-Video-Rotator/main/youtube-rotate-fit.user.js
 ==/用户脚本==
 
 (功能 () {
