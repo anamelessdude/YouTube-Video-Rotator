@@ -1,10 +1,8 @@
 // ==UserScript==
 // @name         YouTube Rotate & Fit
-// @name:zh-CN   YouTube 视频旋转与全屏适配
 // @namespace    youtube-rotate-fit
 // @version      1.0.2
-// @description  Rotate sideways YouTube videos 90° and automatically fit the entire video in fullscreen without cropping.
-// @description:zh-CN 一键旋转侧着的 YouTube 视频，并自动适配全屏显示，完整显示画面而不裁切。
+// @description  Rotate sideways YouTube videos 90 degrees and automatically fit the entire video in fullscreen without cropping.
 // @author       YouTube Rotate & Fit contributors
 // @match        https://www.youtube.com/*
 // @grant        none
@@ -15,384 +13,385 @@
 // @downloadURL  https://raw.githubusercontent.com/anamelessdude/YouTube-Video-Rotator/main/youtube-rotate-fit.user.js
 // ==/UserScript==
 
-(功能 () {
-    “用严格的”;
+(function () {
+    'use strict';
 
-    cont UI_ID = “YouTube-旋转-调整-控制”;
+    const UI_ID = 'youtube-rotate-fit-controls';
 
-    令旋转 = 0;
-    设旋转计时器 = 零;
+    let rotation = 0;
+    let rotateTimer = null;
 
     // ------------------------------------------------------------
-    寻找YouTube的视频元素
+    // Find YouTube's video element
     // ------------------------------------------------------------
 
     function getVideo() {
-        回归 (
-            记录。querySelector（'video.html5-main-video'） ||
-            记录。querySelector（'video')
+        return (
+            document.querySelector('video.html5-main-video') ||
+            document.querySelector('video')
         );
     }
 
-    函数 getPlayer() {
-        退回文件。querySelector（'#movie_player');
+    function getPlayer() {
+        return document.querySelector('#movie_player');
     }
 
-    保持角度在-180到180度之间
-    函数 normalizeAngle（角度) {
-        角度 %= 360;
+    // Keep the angle between -180 and 180 degrees
+    function normalizeAngle(angle) {
+        angle %= 360;
 
-        如果（角度>180) {
-            角度 -= 360;
+        if (angle > 180) {
+            angle -= 360;
         }
 
-        如果（角度<-180) {
-            角度 += 360;
+        if (angle < -180) {
+            angle += 360;
         }
 
-        回弹角度;
+        return angle;
     }
 
     // ------------------------------------------------------------
-    核心：旋转视频并放进播放器里
+    // Core: rotate the video and fit it inside the player
     // ------------------------------------------------------------
 
-    函数应用旋转() {
+    function applyRotation() {
         const video = getVideo();
         const player = getPlayer();
 
-        如果（！视频 || ！球员) {
-            回归;
+        if (!video || !player) {
+            return;
         }
 
-        const 角度 = 归一化角度（旋转）);
+        const angle = normalizeAngle(rotation);
 
-        0度=恢复YouTube的正常视频显示
-        如果（角度=== 0）) {
-            视频。风格。removeProperty（'transform');
-            视频。风格。removeProperty（'transform-origin');
-            视频。风格。removeProperty（'transition');
-            回归;
+        // 0 degrees = restore YouTube's normal video display
+        if (angle === 0) {
+            video.style.removeProperty('transform');
+            video.style.removeProperty('transform-origin');
+            video.style.removeProperty('transition');
+            return;
         }
 
         /*
-* 暂时移除变换，以便测量
-* YouTube在计算比例前的真实视频尺寸。
+         * Temporarily remove the transform so we can measure
+         * YouTube's real video size before calculating the scale.
          *
-* 这是防止裁剪的重要部分。
+         * This is the important part that prevents cropping.
          */
-        视频。风格。setProperty(
-            “变形”，
-            “没有”，
-            “重要”
+        video.style.setProperty(
+            'transform',
+            'none',
+            'important'
         );
 
-        视频。风格。setProperty(
-            “变换起源”，
-            “中心中心”，
-            “重要”
+        video.style.setProperty(
+            'transform-origin',
+            'center center',
+            'important'
         );
 
-        视频。风格。setProperty(
-            “过渡”，
-            “没有”，
-            “重要”
+        video.style.setProperty(
+            'transition',
+            'none',
+            'important'
         );
 
-        const videoRect = 视频。getBoundingClientRect();
+        const videoRect = video.getBoundingClientRect();
 
-        让playerWidth受影响;
-        让 playerHeight;
+        let playerWidth;
+        let playerHeight;
 
-        当YouTube全屏时，使用整个屏幕大小
-        如果（文档）。全屏元素) {
-            playerWidth = 窗口。内宽;
-            playerHeight = 窗口。内高;
-        } 否则 {
-            const playerRect = 玩家。getBoundingClientRect();
-            playerWidth = playerRect。宽度;
-            playerHeight = playerRect。高度;
+        // When YouTube is fullscreen, use the entire screen size
+        if (document.fullscreenElement) {
+            playerWidth = window.innerWidth;
+            playerHeight = window.innerHeight;
+        } else {
+            const playerRect = player.getBoundingClientRect();
+            playerWidth = playerRect.width;
+            playerHeight = playerRect.height;
         }
 
-        如果 (
-            ！视频Rect。宽度||
-            ！视频Rect。身高 ||
-            ！player宽度 ||
-            ！球员身高
+        if (
+            !videoRect.width ||
+            !videoRect.height ||
+            !playerWidth ||
+            !playerHeight
         ) {
-            回归;
+            return;
         }
 
         const quarterTurn =
-            数学。腹肌（角度）% 180 === 90;
+            Math.abs(angle) % 180 === 90;
 
         /*
-* 旋转90°或-90°后，
-* 宽度和高度互换。
+         * After rotating 90 or -90 degrees,
+         * the width and height are exchanged.
          */
-        cont rotated宽度 = 四分之一转
-?视频Rect。高度
-： 视频 Rect。宽度;
+        const rotatedWidth = quarterTurn
+            ? videoRect.height
+            : videoRect.width;
 
-        const rotd高度 = 四分之一转
-?视频Rect。宽度
-： 视频 Rect。高度;
+        const rotatedHeight = quarterTurn
+            ? videoRect.width
+            : videoRect.height;
 
         /*
-* 选择最大且仍保持比例的比例
-* 完整视频可见。
+         * Choose the largest possible scale that still keeps
+         * the ENTIRE video visible.
          */
-        集合尺度 = 数学。明(
-            playerWidth / rotatedWidth，
+        const scale = Math.min(
+            playerWidth / rotatedWidth,
             playerHeight / rotatedHeight
         );
 
-        视频。风格。setProperty(
-            “变形”，
-            '旋转（' + 角度 + '度）比例（' + 刻度+'）'，
-            “重要”
+        video.style.setProperty(
+            'transform',
+            'rotate(' + angle + 'deg) scale(' + scale + ')',
+            'important'
         );
     }
 
     // ------------------------------------------------------------
-    YouTube更换全屏/布局后重新应用
+    // Re-apply after YouTube changes fullscreen/layout
     // ------------------------------------------------------------
 
-    函数刷新旋转() {
-        应用旋转();
+    function refreshRotation() {
+        applyRotation();
 
-        YouTube 可能会在全屏调整后不久重建其布局
-        setTimeout（applyRotation， 100);
-        setTimeout（applyRotation， 300);
-        setTimeout（applyRotation， 800）);
+        // YouTube may rebuild its layout shortly after fullscreen changes
+        setTimeout(applyRotation, 100);
+        setTimeout(applyRotation, 300);
+        setTimeout(applyRotation, 800);
     }
 
     function startProtection() {
-        如果（rotateTimer）) {
-            clearInterval（rotateTimer);
-            旋转计时器 = 零;
+        if (rotateTimer) {
+            clearInterval(rotateTimer);
+            rotateTimer = null;
         }
 
-        如果 （normalizeAngle（旋转） ！== 0) {
+        if (normalizeAngle(rotation) !== 0) {
             /*
-* YouTube有时会覆盖视频的变换。
-* 重新应用可以保持旋转全屏运行。
+             * YouTube can occasionally overwrite the video's transform.
+             * Re-applying it keeps the rotation working in fullscreen.
              */
             rotateTimer = setInterval(
-                应用旋转，
+                applyRotation,
                 500
             );
         }
     }
 
-    函数 setRotation（角度) {
-        旋转 = 归一化角度（角度);
+    function setRotation(angle) {
+        rotation = normalizeAngle(angle);
 
-        更新角度按钮();
-        刷新旋转();
+        updateAngleButton();
+        refreshRotation();
         startProtection();
     }
 
     // ------------------------------------------------------------
-    用户界面
+    // User interface
     // ------------------------------------------------------------
 
-    function createButton（text， title) {
-        const button = 文档。createElement（'button');
+    function createButton(text, title) {
+        const button = document.createElement('button');
 
-        按钮。文本内容 = 文本;
-        按钮。标题 = 标题;
+        button.textContent = text;
+        button.title = title;
 
-        按钮。风格。宽度 = '38px';
-        按钮。风格。高度 = '34px';
-        按钮。风格。border = '0';
-        按钮。风格。borderRadius = '6px';
-        按钮。风格。背景 = 'RGBA（255,255,255,0.16）';
-        按钮。风格。颜色 = '#fff';
-        按钮。风格。fontSize = '18px';
-        按钮。风格。光标 = “指针”;
-        按钮。风格。填充 = '0';
-        按钮。风格。margin = '0';
+        button.style.width = '38px';
+        button.style.height = '34px';
+        button.style.border = '0';
+        button.style.borderRadius = '6px';
+        button.style.background = 'rgba(255,255,255,0.16)';
+        button.style.color = '#fff';
+        button.style.fontSize = '18px';
+        button.style.cursor = 'pointer';
+        button.style.padding = '0';
+        button.style.margin = '0';
 
-        按钮。addEventListener（事件听众）(
-            “鼠标进入”
-            功能 () {
-                按钮。风格。背景 =
-                    'rgba（255,255,255,0.30）';
+        button.addEventListener(
+            'mouseenter',
+            function () {
+                button.style.background =
+                    'rgba(255,255,255,0.30)';
             }
         );
 
-        按钮。addEventListener（事件听众）(
-            “鼠叶”，
-            功能 () {
-                按钮。风格。背景 =
-                    'rgba（255,255,255,0.16）';
+        button.addEventListener(
+            'mouseleave',
+            function () {
+                button.style.background =
+                    'rgba(255,255,255,0.16)';
             }
         );
 
         /*
-* 防止YouTube处理按钮点击
-* 作为视频本身的点击。
+         * Prevent YouTube from treating the button click
+         * as a click on the video itself.
          */
-        按钮。addEventListener（事件听众）(
-            “鼠标倒下”，
-            函数（事件）) {
-                活动。停止传播();
+        button.addEventListener(
+            'mousedown',
+            function (event) {
+                event.stopPropagation();
             }
         );
 
-        按钮。addEventListener（事件听众）(
-            “咔嗒”，
-            函数（事件）) {
-                活动。停止传播();
-                活动。防止默认();
+        button.addEventListener(
+            'click',
+            function (event) {
+                event.stopPropagation();
+                event.preventDefault();
             }
         );
 
-        返回按钮;
+        return button;
     }
 
     function ensureControls() {
         const player = getPlayer();
 
-        如果（！球员) {
-            回归;
+        if (!player) {
+            return;
         }
 
-        如果（文档）。getElementById（UI_ID)) {
-            回归;
+        if (document.getElementById(UI_ID)) {
+            return;
         }
 
-        const panel = 文档。createElement（'div');
+        const panel = document.createElement('div');
 
-        小组。id = UI_ID;
+        panel.id = UI_ID;
 
-        小组。风格。位置 = '绝对';
-        小组。风格。top = '12px';
-        小组。风格。右 = '12px';
-        小组。风格。zIndex = '999999';
-        小组。风格。display = “flex”;
-        小组。风格。alignItems = '中心';
-        小组。风格。间隙 = “4px”;
-        小组。风格。填充 = '5px';
-        小组。风格。borderRadius = '8px';
-        小组。风格。背景 = 'RGBA（0,0,0,0.65）'';
-        小组。风格。backdropFilter = '模糊（4px）';
-        小组。风格。font家族 =
-            “阿里亚尔，衬线”;
-        小组。风格。userSelect = 'none';
-        小组。风格。pointerEvents = 'auto';
+        panel.style.position = 'absolute';
+        panel.style.top = '12px';
+        panel.style.right = '12px';
+        panel.style.zIndex = '999999';
+        panel.style.display = 'flex';
+        panel.style.alignItems = 'center';
+        panel.style.gap = '4px';
+        panel.style.padding = '5px';
+        panel.style.borderRadius = '8px';
+        panel.style.background = 'rgba(0,0,0,0.65)';
+        panel.style.backdropFilter = 'blur(4px)';
+        panel.style.fontFamily = 'Arial, sans-serif';
+        panel.style.userSelect = 'none';
+        panel.style.pointerEvents = 'auto';
 
-        向左转
+        // Rotate left
         const leftButton = createButton(
-            “↺'，
-            “向左转90°”
+            '↺',
+            'Rotate left 90 degrees'
         );
 
-        中央按钮：电流角度+复位
+        // Center button: current angle + reset
         const angleButton = createButton(
-            '0°'，
-            “重置旋转”
+            '0°',
+            'Reset rotation'
         );
 
-        angleButton。身份证 =
-            “YouTube旋转贴合角度”;
+        angleButton.id = 'youtube-rotate-fit-angle';
 
-        angleButton。风格。宽度 = '46px';
-        angleButton。风格。fontSize = '13px';
+        angleButton.style.width = '46px';
+        angleButton.style.fontSize = '13px';
 
-        向右旋转
+        // Rotate right
         const rightButton = createButton(
-            “↻”，
-            “向右旋转90°”
+            '↻',
+            'Rotate right 90 degrees'
         );
 
-        左按钮。addEventListener（事件听众）(
-            “咔嗒”，
-            功能 () {
-                setRotation（旋转 - 90);
+        leftButton.addEventListener(
+            'click',
+            function () {
+                setRotation(rotation - 90);
             }
         );
 
-        angleButton。addEventListener（事件听众）(
-            “咔嗒”，
-            功能 () {
-                setRotation（0);
+        angleButton.addEventListener(
+            'click',
+            function () {
+                setRotation(0);
             }
         );
 
-        右按钮。addEventListener（事件听众）(
-            “咔嗒”，
-            功能 () {
-                setRotation（旋转 + 90);
+        rightButton.addEventListener(
+            'click',
+            function () {
+                setRotation(rotation + 90);
             }
         );
 
-        小组。appendChild（leftButton）);
-        小组。appendChild（angleButton）);
-        小组。appendChild（rightButton）);
+        panel.appendChild(leftButton);
+        panel.appendChild(angleButton);
+        panel.appendChild(rightButton);
 
-        玩家。appendChild（panel）);
+        player.appendChild(panel);
 
-        更新角度按钮();
+        updateAngleButton();
     }
 
     function updateAngleButton() {
         const angleButton =
-            记录。getElementById(
-                “YouTube旋转贴合角度”
+            document.getElementById(
+                'youtube-rotate-fit-angle'
             );
 
-        如果（！angleButton) {
-            回归;
+        if (!angleButton) {
+            return;
         }
 
-        angleButton。文本内容 =
-            normalizeAngle（旋转) + '°';
+        angleButton.textContent =
+            normalizeAngle(rotation) + '°';
     }
 
     // ------------------------------------------------------------
-    YouTube活动
+    // YouTube events
     // ------------------------------------------------------------
 
-    记录。addEventListener（事件听众）(
-        “全屏切换”，
-        刷新旋转
+    document.addEventListener(
+        'fullscreenchange',
+        refreshRotation
     );
 
-    窗户。addEventListener（事件听众）(
-        “resize”，
-        刷新旋转
+    window.addEventListener(
+        'resize',
+        refreshRotation
     );
 
     /*
-* YouTube是一个单页应用。
-* 当用户更换视频时，该事件会触发。
+     * YouTube is a single-page application.
+     * This event fires when the user changes videos.
      */
-    记录。addEventListener（事件听众）(
-        'yt-navigate-finish'，
-        功能 () {
-            setTimeout（函数） () {
-                ensureControls();
-                刷新旋转();
-            }，500);
+    document.addEventListener(
+        'yt-navigate-finish',
+        function () {
+            setTimeout(
+                function () {
+                    ensureControls();
+                    refreshRotation();
+                },
+                500
+            );
         }
     );
 
-    初始启动
+    // Initial startup
     ensureControls();
 
     setTimeout(
-        确保控制，
+        ensureControls,
         1000
     );
 
     /*
-* 如果YouTube重建播放器，请恢复我们的按钮。
-* 这本节目每两秒才运行一次。
+     * If YouTube rebuilds the player,
+     * restore our controls.
      */
     setInterval(
-        确保控制，
+        ensureControls,
         2000
     );
 
